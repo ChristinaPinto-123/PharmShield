@@ -14,7 +14,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     body { font-family: 'Inter', sans-serif; }
     .font-mono { font-family: 'JetBrains+Mono', monospace; }
-    .modal-backdrop { background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); }
+    .modal-backdrop { background-color: rgba(15, 23, 42, 0.82); backdrop-filter: blur(6px); }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
@@ -46,8 +46,18 @@
       </div>
     </div>
 
-    <!-- User / Role Switcher -->
+    <!-- Quick Action Bar & Role Switcher -->
     <div class="flex items-center space-x-3">
+      <button onclick="openMedicineModal('create')" class="hidden sm:flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+        <i data-lucide="pill" class="w-4 h-4 text-cyan-400"></i>
+        <span>+ Medicine</span>
+      </button>
+
+      <button onclick="openInventoryModal()" class="flex items-center space-x-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md shadow-cyan-600/20 transition">
+        <i data-lucide="boxes" class="w-4 h-4"></i>
+        <span>Update Stock</span>
+      </button>
+
       <div class="text-right hidden sm:block">
         <div class="text-xs font-semibold text-slate-200" id="user-display-name">Dr. A. Vance</div>
         <div class="text-[10px] text-cyan-400 uppercase font-mono" id="user-display-role">Regional Health Officer</div>
@@ -73,6 +83,11 @@
       <i data-lucide="hospital" class="w-4 h-4"></i>
       <span>Facility Drill-Down</span>
     </button>
+    <button onclick="switchTab('formulary')" id="tab-formulary" class="tab-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2 relative">
+      <i data-lucide="tablets" class="w-4 h-4"></i>
+      <span>Medicine Formulary</span>
+      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 absolute top-1 right-1"></span>
+    </button>
     <button onclick="switchTab('workspace')" id="tab-workspace" class="tab-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2 relative">
       <i data-lucide="git-merge" class="w-4 h-4"></i>
       <span>Intervention Workspace</span>
@@ -88,7 +103,7 @@
   <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
 
     <!-- ========================================================================= -->
-    <!-- VIEW 1: REGIONAL COMMAND DASHBOARD                                        -->
+    <!-- VIEW 1: REGIONAL COMMAND DASHBOARD (ORIGINAL HOMEPAGE INTACT)              -->
     <!-- ========================================================================= -->
     <div id="view-dashboard" class="space-y-6">
       <!-- High Level Metric Ribbons -->
@@ -98,7 +113,7 @@
             <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Facilities At Critical Risk</span>
             <span class="p-1.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20"><i data-lucide="alert-triangle" class="w-4 h-4"></i></span>
           </div>
-          <div class="mt-2 text-2xl font-bold text-white font-mono">3 <span class="text-xs font-normal text-rose-400 font-sans">/ 14 in Cluster</span></div>
+          <div class="mt-2 text-2xl font-bold text-white font-mono" id="dash-critical-count">3 <span class="text-xs font-normal text-rose-400 font-sans">/ 14 in Cluster</span></div>
           <div class="mt-2 flex items-center text-[11px] text-rose-400 font-mono">
             <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +2 since last 48h (Spatial contagion)
           </div>
@@ -117,10 +132,10 @@
 
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
           <div class="flex justify-between items-start">
-            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Chronic Generic Market Scarcity</span>
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Chronic Generic Scarcity</span>
             <span class="p-1.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20"><i data-lucide="layers" class="w-4 h-4"></i></span>
           </div>
-          <div class="mt-2 text-2xl font-bold text-white font-mono">1 SKU</div>
+          <div class="mt-2 text-2xl font-bold text-white font-mono" id="dash-chronic-count">1 SKU</div>
           <div class="mt-2 flex items-center text-[11px] text-purple-300 font-mono">
             <span>Escalated to Pooled Tender</span>
           </div>
@@ -138,7 +153,7 @@
         </div>
       </div>
 
-      <!-- Upstream Event Feed Bar (Architecture Addition 1) -->
+      <!-- Upstream Event Feed Bar -->
       <div class="bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-800/40 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div class="flex items-center space-x-3">
           <div class="p-2 bg-amber-500/20 text-amber-300 rounded-lg shrink-0">
@@ -149,7 +164,7 @@
               <span>Upstream Disruption Signal (FHIR SupplyDelivery Ingestion)</span>
               <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-900 text-amber-200 border border-amber-700">Port Customs Embargo</span>
             </div>
-            <p class="text-xs text-slate-400 mt-0.5">Supplier <strong class="text-slate-200">PharmaSupply Hub North</strong>: Ceftriaxone & Amoxicillin shipments delayed 18 days. Confidence in facility-level shortage alerts upgraded from <strong class="text-amber-300">Moderate (54%)</strong> to <strong class="text-rose-400">High Corroborated (91%)</strong>.</p>
+            <p class="text-xs text-slate-400 mt-0.5">Supplier <strong class="text-slate-200">PharmaSupply Hub North</strong>: Ceftriaxone & Amoxicillin shipments delayed 18 days. Alert confidence upgraded to <strong class="text-rose-400">High Corroborated (91%)</strong>.</p>
           </div>
         </div>
         <button onclick="switchTab('workspace')" class="text-xs px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg shrink-0 flex items-center space-x-1.5 transition">
@@ -180,7 +195,6 @@
           <!-- Dynamic Node Topology Canvas -->
           <div class="flex-1 min-h-[300px] bg-slate-950/60 border border-slate-800/80 rounded-lg relative p-4 overflow-hidden flex items-center justify-center">
             <svg class="absolute inset-0 w-full h-full" id="topology-svg">
-              <!-- Route Lines -->
               <line x1="20%" y1="35%" x2="50%" y2="50%" stroke="#334155" stroke-width="2" stroke-dasharray="4" />
               <line x1="80%" y1="30%" x2="50%" y2="50%" stroke="#f43f5e" stroke-width="2" />
               <line x1="30%" y1="80%" x2="50%" y2="50%" stroke="#10b981" stroke-width="2" />
@@ -198,11 +212,11 @@
 
             <!-- Node 2: Hospital Alpha (Critical Shortage) -->
             <div class="absolute top-[18%] right-[15%] text-center cursor-pointer group" onclick="selectFacility('FAC-HOSP-ALPHA')">
-              <div class="w-11 h-11 rounded-xl bg-rose-950 border-2 border-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20 group-hover:scale-110 transition animate-bounce">
+              <div id="node-alpha-icon" class="w-11 h-11 rounded-xl bg-rose-950 border-2 border-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20 group-hover:scale-110 transition animate-bounce">
                 <i data-lucide="cross" class="w-5 h-5 text-rose-400"></i>
               </div>
               <div class="text-[11px] font-bold mt-1 text-rose-300">Hospital Alpha</div>
-              <div class="text-[9px] font-mono text-rose-400">Risk Score: 0.88 (3.2 DoS)</div>
+              <div class="text-[9px] font-mono text-rose-400" id="node-alpha-dos">DoS: 3.0d</div>
             </div>
 
             <!-- Node 3: Hospital Gamma (Donor Surplus) -->
@@ -249,7 +263,6 @@
             <p class="text-xs text-slate-400 mt-1">Classified into Acute (Redistributable) vs Chronic (Pooled Procurement).</p>
           </div>
 
-          <!-- Incidents List -->
           <div class="space-y-3 flex-1 overflow-y-auto max-h-[340px] pr-1">
             <!-- Acute Incident Card -->
             <div class="p-3.5 bg-slate-950 rounded-lg border border-rose-900/60 hover:border-rose-600 transition">
@@ -265,7 +278,7 @@
               </div>
             </div>
 
-            <!-- Chronic Generic Market Shortage Card (Architecture Addition 4) -->
+            <!-- Chronic Incident Card -->
             <div class="p-3.5 bg-slate-950 rounded-lg border border-purple-900/60 hover:border-purple-600 transition">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-mono font-bold text-purple-400">INC-2026-3012</span>
@@ -280,9 +293,15 @@
             </div>
           </div>
 
-          <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-400">
-            <i data-lucide="info" class="w-3.5 h-3.5 inline text-cyan-400 mr-1"></i>
-            Dual-Path Engine compares Moving-Avg baseline with Shadow Bayesian model.
+          <div class="pt-2 border-t border-slate-800 flex gap-2">
+            <button onclick="openInventoryModal()" class="flex-1 py-2 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-800 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
+              <i data-lucide="boxes" class="w-3.5 h-3.5"></i>
+              <span>Update Stock</span>
+            </button>
+            <button onclick="switchTab('formulary')" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
+              <i data-lucide="tablets" class="w-3.5 h-3.5"></i>
+              <span>Formulary</span>
+            </button>
           </div>
         </div>
       </div>
@@ -296,19 +315,19 @@
         <div>
           <div class="flex items-center space-x-3">
             <h2 class="text-lg font-bold text-white" id="fac-detail-name">Hospital Alpha (Acute Facility)</h2>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-rose-950 text-rose-400 border border-rose-800">CRITICAL DEFICIT</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-rose-950 text-rose-400 border border-rose-800" id="fac-detail-badge">CRITICAL DEFICIT</span>
           </div>
           <p class="text-xs text-slate-400 mt-0.5">Facility ID: <span class="font-mono text-slate-300" id="fac-detail-id">FAC-HOSP-ALPHA</span> | GS1 GLN: <span class="font-mono">0844512000018</span> | Type: Tertiary Referral Centre</p>
         </div>
 
-        <!-- Medicine SKU Filter -->
-        <div class="flex items-center space-x-2">
-          <label class="text-xs text-slate-400">Selected Medicine:</label>
-          <select id="facility-drug-select" onchange="updateFacilityCharts()" class="bg-slate-800 text-slate-100 text-xs rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:border-cyan-500 font-mono">
-            <option value="ceftriaxone">Ceftriaxone 1g Inj (Critical)</option>
-            <option value="amoxicillin">Amoxicillin 500mg (At Risk)</option>
-            <option value="methotrexate">Methotrexate 2.5mg (Chronic Failure)</option>
+        <div class="flex items-center space-x-3">
+          <select id="facility-drug-select" onchange="changeActiveMedicine(this.value)" class="bg-slate-800 text-slate-100 text-xs rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:border-cyan-500 font-mono">
+            <!-- Dynamically populated from Formulary -->
           </select>
+          <button onclick="openInventoryModal()" class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 shadow-md shadow-cyan-600/20">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span>Update Stock</span>
+          </button>
         </div>
       </div>
 
@@ -317,45 +336,43 @@
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div class="text-xs text-slate-400">Usable Stock on Hand</div>
           <div class="text-2xl font-bold font-mono text-white mt-1" id="stat-usable-stock">320 vials</div>
-          <div class="text-[11px] text-slate-400 mt-1">Quarantined: 0 | Reserved: 40</div>
+          <div class="text-[11px] text-slate-400 mt-1" id="stat-reserved-quarantine">Quarantined: 0 | Reserved: 40</div>
         </div>
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div class="text-xs text-slate-400">Average Daily Consumption (ADC)</div>
           <div class="text-2xl font-bold font-mono text-white mt-1" id="stat-adc">105 vials/day</div>
-          <div class="text-[11px] text-rose-400 mt-1 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +28% spike detected</div>
+          <div class="text-[11px] text-rose-400 mt-1 flex items-center" id="stat-spike-tag"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +28% spike detected</div>
         </div>
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div class="text-xs text-slate-400">Days of Stock (DoS)</div>
           <div class="text-2xl font-bold font-mono text-rose-400 mt-1" id="stat-dos">3.04 Days</div>
-          <div class="text-[11px] text-rose-400 mt-1 font-semibold">Stockout Expected in 73 hrs</div>
+          <div class="text-[11px] text-rose-400 mt-1 font-semibold" id="stat-stockout-eta">Stockout Expected in 73 hrs</div>
         </div>
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div class="text-xs text-slate-400">Calculated Risk Index ($R$)</div>
           <div class="text-2xl font-bold font-mono text-rose-400 mt-1" id="stat-risk">0.882</div>
-          <div class="text-[11px] text-slate-400 mt-1">$w_1S + w_2D + w_3L + w_4G + w_5C$</div>
+          <div class="text-[11px] text-slate-400 mt-1 font-mono">$w_1S + w_2D + w_3L + w_4G + w_5C$</div>
         </div>
       </div>
 
-      <!-- Dual-Path Forecast & Shadow ML Model (Architecture Addition 2) -->
+      <!-- Dual-Path Forecast & Shadow ML Model -->
       <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-2">
           <div>
             <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-              <span>Dual-Path Demand & Stock Projection Engine (30-Day Window)</span>
+              <span>Dual-Path Demand & Stock Projection Engine (15-Day Window)</span>
               <span class="text-[10px] font-mono px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-800 rounded">Gated Shadow Validation</span>
             </h3>
             <p class="text-xs text-slate-400 mt-0.5">
               Path 1: Transparent Clinician-Auditable Moving Average Baseline. Path 2: Bayesian Epidemiological Model (Weather & Admissions).
             </p>
           </div>
-          <!-- Model Divergence Metric -->
           <div class="flex items-center space-x-2 text-xs font-mono bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
             <span class="text-slate-400">Model Divergence:</span>
-            <span class="text-emerald-400 font-bold">4.2% (Within 10% Gate &rarr; Safe)</span>
+            <span class="text-emerald-400 font-bold" id="model-divergence-val">4.2% (Within 10% Gate &rarr; Safe)</span>
           </div>
         </div>
 
-        <!-- Chart Container -->
         <div class="mt-4 h-72 w-full">
           <canvas id="forecastChart"></canvas>
         </div>
@@ -363,7 +380,7 @@
         <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-slate-950 p-3.5 rounded-lg border border-slate-800">
           <div>
             <span class="font-semibold text-slate-300">Stockout Probability (14-day):</span>
-            <span class="text-rose-400 font-mono font-bold block text-sm">84.2%</span>
+            <span class="text-rose-400 font-mono font-bold block text-sm" id="fc-prob-stockout">84.2%</span>
           </div>
           <div>
             <span class="font-semibold text-slate-300">Upstream Corroborated Penalty:</span>
@@ -371,14 +388,84 @@
           </div>
           <div>
             <span class="font-semibold text-slate-300">Batch Expiry Warning (FEFO):</span>
-            <span class="text-slate-300 font-mono font-bold block text-sm">Batch #CT-901 (40 vials) expires in 12d</span>
+            <span class="text-slate-300 font-mono font-bold block text-sm" id="fc-fefo-summary">Batch #CT-901 expires in 12d</span>
+          </div>
+        </div>
+
+        <!-- Inventory Lot Breakdown Table -->
+        <div class="mt-6">
+          <div class="flex justify-between items-center mb-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Active Batches on Site (FEFO Order)</h4>
+            <span class="text-[11px] text-cyan-400 font-mono cursor-pointer hover:underline" onclick="openInventoryModal()">+ Add Inward Shipment</span>
+          </div>
+          <div class="overflow-x-auto border border-slate-800 rounded-lg">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-950 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5">Lot / Batch #</th>
+                  <th class="p-2.5">Quantity</th>
+                  <th class="p-2.5">Expiry Date</th>
+                  <th class="p-2.5">Status</th>
+                  <th class="p-2.5">Storage Temp</th>
+                  <th class="p-2.5">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 bg-slate-950/40 text-slate-300" id="facility-batches-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- VIEW 3: RECOMMENDATION & OPTIMIZATION WORKSPACE                          -->
+    <!-- VIEW 3: MEDICINE FORMULARY MANAGEMENT (ADD, MODIFY, DELETE)                -->
+    <!-- ========================================================================= -->
+    <div id="view-formulary" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-5 rounded-xl border border-slate-800">
+        <div>
+          <div class="flex items-center space-x-3">
+            <h2 class="text-lg font-bold text-white">Master Medicine Registry</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">WHO EML & GS1 Compliant</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Define essential drug profiles, adjust shortage algorithm criticality coefficients ($C$), and manage lifecycle state.</p>
+        </div>
+        <button onclick="openMedicineModal('create')" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg text-xs font-bold flex items-center space-x-2 shadow-lg shadow-cyan-500/20">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add New Medicine</span>
+        </button>
+      </div>
+
+      <!-- Formulary Catalog Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">Registered Formulary Medicines</span>
+          <span class="text-xs text-slate-400">Total: <strong class="text-white font-mono" id="formulary-total-count">3 Active</strong></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="p-3">SKU Identifier</th>
+                <th class="p-3">Generic Name & Strength</th>
+                <th class="p-3">Dosage / Pack</th>
+                <th class="p-3">Storage Requirement</th>
+                <th class="p-3">Clinical Criticality ($C$)</th>
+                <th class="p-3">Lead Time Baseline</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 bg-slate-950/40 text-slate-300" id="formulary-table-body">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 4: RECOMMENDATION WORKSPACE (ACUTE & CHRONIC RESOLUTION)              -->
     <!-- ========================================================================= -->
     <div id="view-workspace" class="hidden space-y-6">
       <div class="flex items-center justify-between">
@@ -410,7 +497,7 @@
             </div>
           </div>
 
-          <!-- Flow Comparison Table -->
+          <!-- Flow Comparison Grid -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-6">
             <!-- Donor -->
             <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
@@ -445,7 +532,7 @@
               <span class="text-xs font-mono text-rose-400 font-semibold uppercase">Recipient Facility</span>
               <div class="text-sm font-bold text-white mt-1">Hospital Alpha</div>
               <div class="mt-3 space-y-1.5 text-xs text-slate-300 font-mono">
-                <div>Current Stock: <strong class="text-rose-400">320 vials (3.04 DoS)</strong></div>
+                <div>Current Stock: <strong class="text-rose-400" id="rec-recipient-stock">320 vials (3.04 DoS)</strong></div>
                 <div>Received Qty: <strong class="text-emerald-400">+350 vials</strong></div>
                 <div>Post-Transfer Stock: <strong class="text-white">670 vials</strong></div>
                 <div class="text-emerald-400 pt-1 font-sans">Extends DoS to 8.5 Days (Until Vendor Re-supply)</div>
@@ -453,14 +540,14 @@
             </div>
           </div>
 
-          <!-- Human-In-The-Loop Approval Action Controls -->
+          <!-- Actions -->
           <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="text-xs text-slate-400 flex items-center space-x-2">
               <i data-lucide="lock" class="w-4 h-4 text-cyan-400"></i>
               <span>Requires dual authorization under Section 4 Health Resilience Protocols.</span>
             </div>
             <div class="flex items-center space-x-3">
-              <button onclick="openRejectModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+              <button onclick="showToast('Intervention Adjusted', 'Manual constraints reloaded.')" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
                 Reject / Modify
               </button>
               <button onclick="approveTransfer('REC-8821')" id="btn-approve-transfer" class="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold shadow-lg shadow-cyan-500/20 flex items-center space-x-2">
@@ -472,7 +559,7 @@
         </div>
       </div>
 
-      <!-- Chronic Generic Pooled Tender Plan Card (Architecture Addition 4) -->
+      <!-- Chronic Pooled Order Plan Card -->
       <div id="plan-chronic" class="hidden space-y-6">
         <div class="bg-slate-900 border border-purple-800/60 rounded-xl p-6 shadow-xl">
           <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-4">
@@ -482,7 +569,7 @@
                 <span class="text-xs px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800 font-mono">MARKET DEFICIT (NON-REDISTRIBUTABLE)</span>
               </div>
               <h3 class="text-base font-bold text-white mt-1">Multi-Facility Demand Pooling & Bulk Tender Escalation</h3>
-              <p class="text-xs text-slate-400 mt-0.5">Zero donor facilities have usable surplus. Escalating aggregated demand to National Central Medical Store / Donor Pooled Facility.</p>
+              <p class="text-xs text-slate-400 mt-0.5">Zero donor surplus found. Consolidated demand aggregated for national pooled procurement.</p>
             </div>
             <div class="text-right">
               <span class="text-xs text-slate-400 block">Consolidated Demand</span>
@@ -490,7 +577,6 @@
             </div>
           </div>
 
-          <!-- Aggregated Buyer Table -->
           <div class="my-6 overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-300">
               <thead class="bg-slate-950 text-slate-400 font-mono uppercase text-[10px]">
@@ -528,7 +614,6 @@
             </table>
           </div>
 
-          <!-- Value Prop Action -->
           <div class="bg-purple-950/30 border border-purple-800/40 p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="text-xs text-slate-300">
               <strong class="text-purple-300 block mb-1">Data-as-a-Service Monetization & Procurement Leverage:</strong>
@@ -543,7 +628,7 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- VIEW 4: AUDIT & COMPLIANCE TRAIL                                         -->
+    <!-- VIEW 5: AUDIT & COMPLIANCE TRAIL                                         -->
     <!-- ========================================================================= -->
     <div id="view-audit" class="hidden space-y-6">
       <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
@@ -553,7 +638,7 @@
               <span>Cryptographic Immutable Audit Log</span>
               <span class="text-xs font-mono bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">SHA-256 Verifiable</span>
             </h2>
-            <p class="text-xs text-slate-400 mt-0.5">Captures every calculation, model divergence check, human override, and inter-facility dispatch.</p>
+            <p class="text-xs text-slate-400 mt-0.5">Captures calculations, formulary changes, inventory adjustments, model checks, and dispatch orders.</p>
           </div>
           <button onclick="exportAuditTrail()" class="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 flex items-center space-x-1 font-mono">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
@@ -568,6 +653,7 @@
                 <th class="p-3">Timestamp</th>
                 <th class="p-3">Action Event</th>
                 <th class="p-3">Actor</th>
+                <th class="p-3">Target Entity</th>
                 <th class="p-3">Details / Hash</th>
                 <th class="p-3">Status</th>
               </tr>
@@ -581,6 +667,173 @@
     </div>
   </main>
 
+  <!-- ========================================================================= -->
+  <!-- MODAL: MEDICINE FORMULARY CRUD (ADD / EDIT)                                -->
+  <!-- ========================================================================= -->
+  <div id="medicine-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
+            <i data-lucide="pill" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white" id="med-modal-title">Register New Medicine</h3>
+            <p class="text-xs text-slate-400">GS1 / WHO Essential Medicine Record</p>
+          </div>
+        </div>
+        <button onclick="closeMedicineModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="medicine-form" onsubmit="submitMedicineForm(event)" class="space-y-4 text-xs font-mono">
+        <input type="hidden" id="med-mode" value="create" />
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">SKU Key / Identifier</label>
+            <input type="text" id="med-sku" required placeholder="e.g. ciprofloxacin_500" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Generic Name & Strength</label>
+            <input type="text" id="med-name" required placeholder="e.g. Ciprofloxacin 500mg" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Dosage Form</label>
+            <select id="med-form" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500">
+              <option value="Vial / Injection">Vial / Injection</option>
+              <option value="Tablet / Capsule">Tablet / Capsule</option>
+              <option value="Oral Suspension">Oral Suspension</option>
+              <option value="Infusion Bag">Infusion Bag</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Pack Size</label>
+            <input type="text" id="med-pack" required placeholder="e.g. 10 x 1g Vials" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Storage Condition</label>
+            <select id="med-storage" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500">
+              <option value="Cold Chain (2°C - 8°C)">Cold Chain (2°C - 8°C)</option>
+              <option value="Controlled Room Temp (15°C - 25°C)">Room Temp (15°C - 25°C)</option>
+              <option value="Deep Freeze (-20°C)">Deep Freeze (-20°C)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Clinical Criticality ($C \in [0.1, 1.0]$)</label>
+            <input type="number" id="med-criticality" min="0.1" max="1.0" step="0.05" required value="0.80" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Lead Time Baseline (Days)</label>
+            <input type="number" id="med-leadtime" min="1" max="120" required value="14" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Therapeutic Class</label>
+            <input type="text" id="med-class" required placeholder="e.g. Fluoroquinolone Antibiotic" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex justify-end space-x-2 font-sans">
+          <button type="button" onclick="closeMedicineModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-lg shadow-cyan-600/30 flex items-center space-x-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span id="med-submit-btn-text">Save Medicine</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: INVENTORY UPDATE & BATCH ADJUSTMENT DIALOG                          -->
+  <!-- ========================================================================= -->
+  <div id="inventory-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
+            <i data-lucide="boxes" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white">Record Inventory Adjustment</h3>
+            <p class="text-xs text-slate-400">GS1 Compliant Transaction Journal Entry</p>
+          </div>
+        </div>
+        <button onclick="closeInventoryModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="inventory-form" onsubmit="submitInventoryUpdate(event)" class="space-y-4 text-xs font-mono">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Target Facility</label>
+            <select id="modal-fac-id" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500">
+              <option value="FAC-HOSP-ALPHA">Hospital Alpha</option>
+              <option value="FAC-HOSP-GAMMA">St. Jude Facility</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Medicine SKU</label>
+            <select id="modal-sku-id" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500">
+              <!-- Dynamically populated from formulary -->
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Transaction Type</label>
+            <select id="modal-trans-type" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500">
+              <option value="inward_shipment">Inward Receipt (+)</option>
+              <option value="consumption_spike">Usage / Outbreak Spike (-)</option>
+              <option value="quarantine_damage">Quarantine / Damaged (-)</option>
+              <option value="physical_audit">Physical Audit Correction (=)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Adjustment Qty (Units)</label>
+            <input type="number" id="modal-qty" required min="1" placeholder="e.g. 150" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500 font-bold" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Batch / Lot #</label>
+            <input type="text" id="modal-lot" required placeholder="LOT-CT-2026X" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500 uppercase" />
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Expiry Date (FEFO)</label>
+            <input type="date" id="modal-expiry" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Clinical Note / Reason</label>
+          <input type="text" id="modal-notes" required placeholder="e.g. Emergency buffer PO arrival or surgical ward surge" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-cyan-500 font-sans" />
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex justify-end space-x-2 font-sans">
+          <button type="button" onclick="closeInventoryModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-lg shadow-cyan-600/30 flex items-center space-x-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Commit Inventory</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Notification Toast Container -->
   <div id="toast" class="fixed bottom-6 right-6 max-w-md bg-slate-900 border border-cyan-500/50 p-4 rounded-xl shadow-2xl z-50 transform translate-y-24 opacity-0 transition duration-300 flex items-start space-x-3">
     <div id="toast-icon" class="p-1 rounded bg-cyan-500/20 text-cyan-400 shrink-0">
@@ -588,13 +841,101 @@
     </div>
     <div>
       <div id="toast-title" class="text-xs font-bold text-white">Action Executed</div>
-      <div id="toast-desc" class="text-xs text-slate-400 mt-0.5">Transfer logged and confirmed.</div>
+      <div id="toast-desc" class="text-xs text-slate-400 mt-0.5">Operation committed.</div>
     </div>
   </div>
 
-  <!-- Script Logic -->
+  <!-- ========================================================================= -->
+  <!-- APPLICATION STATE & CONTROL SCRIPTS                                       -->
+  <!-- ========================================================================= -->
   <script>
-    // State Stores
+    // 1. Central Formulary Registry
+    const formularyRegistry = {
+      'ceftriaxone': {
+        sku: 'ceftriaxone',
+        name: 'Ceftriaxone Sodium 1g',
+        dosageForm: 'Vial / Injection',
+        packSize: '10 Vials / Box',
+        storage: 'Cold Chain (2°C - 8°C)',
+        criticality: 0.90,
+        leadTimeDays: 14,
+        therapeuticClass: '3rd Gen Cephalosporin'
+      },
+      'amoxicillin': {
+        sku: 'amoxicillin',
+        name: 'Amoxicillin 500mg',
+        dosageForm: 'Tablet / Capsule',
+        packSize: '100 Capsules / Bottle',
+        storage: 'Controlled Room Temp (15°C - 25°C)',
+        criticality: 0.70,
+        leadTimeDays: 7,
+        therapeuticClass: 'Beta-Lactam Antibiotic'
+      },
+      'methotrexate': {
+        sku: 'methotrexate',
+        name: 'Methotrexate 2.5mg',
+        dosageForm: 'Tablet / Capsule',
+        packSize: '100 Tablets / Bottle',
+        storage: 'Controlled Room Temp (15°C - 25°C)',
+        criticality: 0.85,
+        leadTimeDays: 28,
+        therapeuticClass: 'Antimetabolite / DMARD'
+      }
+    };
+
+    // 2. Facility Inventory Store
+    const inventoryDB = {
+      'FAC-HOSP-ALPHA': {
+        name: 'Hospital Alpha',
+        stock: {
+          'ceftriaxone': {
+            usableStock: 320,
+            reservedStock: 40,
+            quarantineStock: 0,
+            adc: 105,
+            batches: [
+              { lot: 'CT-901', qty: 40, expiry: '2026-10-01', temp: '2-8°C', status: 'Near Expiry' },
+              { lot: 'CT-844', qty: 280, expiry: '2027-02-15', temp: '2-8°C', status: 'Usable' }
+            ]
+          },
+          'amoxicillin': {
+            usableStock: 800,
+            reservedStock: 50,
+            quarantineStock: 10,
+            adc: 90,
+            batches: [
+              { lot: 'AM-302', qty: 800, expiry: '2027-05-10', temp: 'Room Temp', status: 'Usable' }
+            ]
+          },
+          'methotrexate': {
+            usableStock: 120,
+            reservedStock: 20,
+            quarantineStock: 0,
+            adc: 45,
+            batches: [
+              { lot: 'MTX-011', qty: 120, expiry: '2026-11-20', temp: 'Room Temp', status: 'Critical Scarcity' }
+            ]
+          }
+        }
+      },
+      'FAC-HOSP-GAMMA': {
+        name: 'St. Jude Facility',
+        stock: {
+          'ceftriaxone': {
+            usableStock: 1450,
+            reservedStock: 100,
+            quarantineStock: 0,
+            adc: 48,
+            batches: [
+              { lot: 'CT-804', qty: 650, expiry: '2027-03-30', temp: '2-8°C', status: 'Surplus' },
+              { lot: 'CT-809', qty: 800, expiry: '2027-08-12', temp: '2-8°C', status: 'Usable' }
+            ]
+          }
+        }
+      }
+    };
+
+    // 3. Application State & Audit Trail
     const appState = {
       role: 'regional_officer',
       selectedFacility: 'FAC-HOSP-ALPHA',
@@ -604,24 +945,24 @@
           timestamp: '2026-09-15 22:15:02 UTC',
           event: 'UPSTREAM_CORROBORATION_INGESTED',
           actor: 'FHIR_GATEWAY_DAEMON',
+          target: 'PORT_DISRUPTION',
           details: 'Ingested Customs Delay on Amoxicillin/Ceftriaxone from North Port Depot',
-          hash: 'e9b2...8f3c',
           status: 'PROCESSED'
         },
         {
           timestamp: '2026-09-15 22:30:19 UTC',
           event: 'DUAL_MODEL_COMPARISON',
           actor: 'ENGINE_SHADOW_RUNNER',
-          details: 'Baseline DoS: 3.04d vs Bayesian DoS: 2.91d (Divergence: 4.2% within safety threshold)',
-          hash: '7a11...32d1',
+          target: 'FAC-HOSP-ALPHA / Ceftriaxone',
+          details: 'Baseline DoS: 3.04d vs Bayesian: 2.91d (Divergence: 4.2% within safety threshold)',
           status: 'VERIFIED'
         },
         {
           timestamp: '2026-09-15 23:01:45 UTC',
           event: 'DIFF_PRIVACY_AGGREGATION',
           actor: 'DP_AGGREGATOR',
-          details: 'Published regional scarcity vector (Epsilon=0.5). Raw stock obscured.',
-          hash: '4c0a...99e2',
+          target: 'REGIONAL_MESH',
+          details: 'Published regional scarcity vector (Epsilon=0.5). Raw hospital stock masked.',
           status: 'ENCRYPTED'
         }
       ]
@@ -629,17 +970,20 @@
 
     let forecastChartInstance = null;
 
-    // Initialize UI
+    // Window Init
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
+      refreshFormularyUI();
       renderAuditLogs();
       initForecastChart();
+      updateFacilityMetrics();
     });
 
-    // View Navigation
+    // =========================================================================
+    // NAVIGATION & TAB SWITCHING
+    // =========================================================================
     function switchTab(viewName) {
-      const views = ['dashboard', 'facility', 'workspace', 'audit'];
-      views.forEach(v => {
+      ['dashboard', 'facility', 'formulary', 'workspace', 'audit'].forEach(v => {
         const el = document.getElementById(`view-${v}`);
         const btn = document.getElementById(`tab-${v}`);
         if (v === viewName) {
@@ -658,7 +1002,12 @@
       }
     }
 
-    // Role Switching (Demonstrating DP and Role Protections)
+    function selectFacility(facilityId) {
+      appState.selectedFacility = facilityId;
+      switchTab('facility');
+      updateFacilityMetrics();
+    }
+
     function handleRoleSwitch(role) {
       appState.role = role;
       const userName = document.getElementById('user-display-name');
@@ -667,7 +1016,7 @@
       if (role === 'hospital_pharmacist') {
         userName.innerText = 'Pharm. Sarah Jenkins';
         userRole.innerText = 'Hospital Alpha Pharmacist';
-        showToast('Privacy Mode Active', 'Peer hospital raw balances hidden per Differential Privacy boundary.');
+        showToast('Privacy Mode Active', 'Peer hospital raw balances masked per Differential Privacy boundary.');
       } else if (role === 'national_director') {
         userName.innerText = 'Hon. M. Thorne';
         userRole.innerText = 'Director Pooled Procurement';
@@ -679,38 +1028,437 @@
       }
     }
 
-    function selectFacility(facilityId) {
-      appState.selectedFacility = facilityId;
-      switchTab('facility');
+    // =========================================================================
+    // FORMULARY MANAGEMENT (ADD, MODIFY, DELETE)
+    // =========================================================================
+    function refreshFormularyUI() {
+      const tbody = document.getElementById('formulary-table-body');
+      const skus = Object.keys(formularyRegistry);
+      document.getElementById('formulary-total-count').innerText = `${skus.length} Active`;
+
+      tbody.innerHTML = skus.map(k => {
+        const item = formularyRegistry[k];
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="p-3 font-bold text-white">${item.sku}</td>
+            <td class="p-3">
+              <span class="text-slate-100 font-semibold">${item.name}</span>
+              <span class="block text-[10px] text-slate-400 font-sans">${item.therapeuticClass}</span>
+            </td>
+            <td class="p-3">${item.dosageForm} <span class="text-slate-400 text-[10px]">(${item.packSize})</span></td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] ${item.storage.includes('Cold') ? 'bg-cyan-950 text-cyan-300 border border-cyan-800' : 'bg-slate-800 text-slate-300'}">
+                ${item.storage}
+              </span>
+            </td>
+            <td class="p-3 font-mono font-bold ${item.criticality >= 0.8 ? 'text-rose-400' : 'text-amber-400'}">
+              ${item.criticality.toFixed(2)}
+            </td>
+            <td class="p-3">${item.leadTimeDays} days</td>
+            <td class="p-3 text-right space-x-2">
+              <button onclick="openMedicineModal('edit', '${item.sku}')" class="text-cyan-400 hover:text-cyan-300 font-sans text-xs underline">Edit</button>
+              <button onclick="deleteMedicine('${item.sku}')" class="text-rose-400 hover:text-rose-300 font-sans text-xs underline">Decommission</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Refresh Dropdowns
+      const selectFacility = document.getElementById('facility-drug-select');
+      const selectModal = document.getElementById('modal-sku-id');
+
+      const optionsHtml = skus.map(k => {
+        const item = formularyRegistry[k];
+        return `<option value="${item.sku}">${item.name} (${item.sku})</option>`;
+      }).join('');
+
+      selectFacility.innerHTML = optionsHtml;
+      selectModal.innerHTML = optionsHtml;
+
+      if (!formularyRegistry[appState.selectedDrug] && skus.length > 0) {
+        appState.selectedDrug = skus[0];
+      }
+      selectFacility.value = appState.selectedDrug;
+      selectModal.value = appState.selectedDrug;
+
+      lucide.createIcons();
+    }
+
+    function openMedicineModal(mode, sku = null) {
+      const modal = document.getElementById('medicine-modal');
+      const title = document.getElementById('med-modal-title');
+      const submitText = document.getElementById('med-submit-btn-text');
+      const modeInput = document.getElementById('med-mode');
+      const skuInput = document.getElementById('med-sku');
+
+      modeInput.value = mode;
+
+      if (mode === 'edit' && sku) {
+        const item = formularyRegistry[sku];
+        title.innerText = `Modify Medicine: ${item.name}`;
+        submitText.innerText = 'Save Formulary Changes';
+        skuInput.value = item.sku;
+        skuInput.disabled = true;
+        document.getElementById('med-name').value = item.name;
+        document.getElementById('med-form').value = item.dosageForm;
+        document.getElementById('med-pack').value = item.packSize;
+        document.getElementById('med-storage').value = item.storage;
+        document.getElementById('med-criticality').value = item.criticality;
+        document.getElementById('med-leadtime').value = item.leadTimeDays;
+        document.getElementById('med-class').value = item.therapeuticClass;
+      } else {
+        title.innerText = 'Register New Medicine to Formulary';
+        submitText.innerText = 'Register Medicine';
+        document.getElementById('medicine-form').reset();
+        skuInput.disabled = false;
+        modeInput.value = 'create';
+      }
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeMedicineModal() {
+      document.getElementById('medicine-modal').classList.add('hidden');
+    }
+
+    function submitMedicineForm(e) {
+      e.preventDefault();
+      const mode = document.getElementById('med-mode').value;
+      const sku = document.getElementById('med-sku').value.trim().toLowerCase().replace(/\s+/g, '_');
+      const name = document.getElementById('med-name').value.trim();
+      const dosageForm = document.getElementById('med-form').value;
+      const packSize = document.getElementById('med-pack').value.trim();
+      const storage = document.getElementById('med-storage').value;
+      const criticality = parseFloat(document.getElementById('med-criticality').value);
+      const leadTimeDays = parseInt(document.getElementById('med-leadtime').value, 10);
+      const therapeuticClass = document.getElementById('med-class').value.trim();
+
+      formularyRegistry[sku] = {
+        sku,
+        name,
+        dosageForm,
+        packSize,
+        storage,
+        criticality,
+        leadTimeDays,
+        therapeuticClass
+      };
+
+      // Ensure seed records exist across inventory
+      Object.keys(inventoryDB).forEach(facId => {
+        if (!inventoryDB[facId].stock[sku]) {
+          inventoryDB[facId].stock[sku] = {
+            usableStock: 0,
+            reservedStock: 0,
+            quarantineStock: 0,
+            adc: 25,
+            batches: []
+          };
+        }
+      });
+
+      // Audit Record
+      appState.auditLogs.unshift({
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+        event: mode === 'create' ? 'FORMULARY_MEDICINE_CREATED' : 'FORMULARY_MEDICINE_MODIFIED',
+        actor: document.getElementById('user-display-name').innerText,
+        target: sku.toUpperCase(),
+        details: `${name} | C=${criticality} | ${storage} | LeadTime=${leadTimeDays}d`,
+        status: 'COMMITTED'
+      });
+
+      closeMedicineModal();
+      refreshFormularyUI();
+      renderAuditLogs();
       updateFacilityMetrics();
+      showToast(mode === 'create' ? 'Medicine Registered' : 'Formulary Updated', `${name} synchronized across registry.`);
+    }
+
+    function deleteMedicine(sku) {
+      const item = formularyRegistry[sku];
+      if (!item) return;
+
+      let totalStock = 0;
+      Object.keys(inventoryDB).forEach(f => {
+        if (inventoryDB[f].stock[sku]) totalStock += inventoryDB[f].stock[sku].usableStock;
+      });
+
+      if (totalStock > 0) {
+        if (!confirm(`Warning: ${totalStock} usable units of ${item.name} exist in network facilities.\n\nDecommission this medicine?`)) return;
+      } else {
+        if (!confirm(`Confirm decommissioning of ${item.name} from regional formulary?`)) return;
+      }
+
+      delete formularyRegistry[sku];
+      Object.keys(inventoryDB).forEach(f => {
+        delete inventoryDB[f].stock[sku];
+      });
+
+      appState.auditLogs.unshift({
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+        event: 'FORMULARY_MEDICINE_DECOMMISSIONED',
+        actor: document.getElementById('user-display-name').innerText,
+        target: sku.toUpperCase(),
+        details: `Decommissioned ${item.name}. Removed from regional cascades.`,
+        status: 'ARCHIVED'
+      });
+
+      const remaining = Object.keys(formularyRegistry);
+      if (appState.selectedDrug === sku) {
+        appState.selectedDrug = remaining.length > 0 ? remaining[0] : null;
+      }
+
+      refreshFormularyUI();
+      renderAuditLogs();
+      updateFacilityMetrics();
+      showToast('Medicine Decommissioned', `${item.name} removed from active catalog.`);
+    }
+
+    // =========================================================================
+    // INVENTORY UPDATE ENGINE & MATHEMATICAL SHORTAGE CALCULATOR
+    // =========================================================================
+    function openInventoryModal() {
+      if (!appState.selectedDrug) {
+        alert("Please register at least one medicine in the formulary first.");
+        return;
+      }
+      document.getElementById('modal-fac-id').value = appState.selectedFacility;
+      document.getElementById('modal-sku-id').value = appState.selectedDrug;
+      const today = new Date();
+      today.setFullYear(today.getFullYear() + 1);
+      document.getElementById('modal-expiry').value = today.toISOString().split('T')[0];
+      document.getElementById('inventory-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeInventoryModal() {
+      document.getElementById('inventory-modal').classList.add('hidden');
+      document.getElementById('inventory-form').reset();
+    }
+
+    function submitInventoryUpdate(e) {
+      e.preventDefault();
+      const facId = document.getElementById('modal-fac-id').value;
+      const skuId = document.getElementById('modal-sku-id').value;
+      const transType = document.getElementById('modal-trans-type').value;
+      const qty = parseInt(document.getElementById('modal-qty').value, 10);
+      const lot = document.getElementById('modal-lot').value.toUpperCase();
+      const expiry = document.getElementById('modal-expiry').value;
+      const notes = document.getElementById('modal-notes').value;
+
+      const fac = inventoryDB[facId];
+      if (!fac || !fac.stock[skuId]) return;
+
+      const record = fac.stock[skuId];
+      let delta = 0;
+
+      if (transType === 'inward_shipment') {
+        delta = qty;
+        record.usableStock += qty;
+        record.batches.push({ lot, qty, expiry, temp: '2-8°C Verified', status: 'Usable' });
+      } else if (transType === 'consumption_spike') {
+        delta = -qty;
+        record.usableStock = Math.max(0, record.usableStock - qty);
+        record.adc = Math.round(record.adc * 1.15);
+        if (record.batches.length > 0) record.batches[0].qty = Math.max(0, record.batches[0].qty - qty);
+      } else if (transType === 'quarantine_damage') {
+        delta = -qty;
+        record.usableStock = Math.max(0, record.usableStock - qty);
+        record.quarantineStock += qty;
+      } else if (transType === 'physical_audit') {
+        delta = qty - record.usableStock;
+        record.usableStock = qty;
+      }
+
+      appState.auditLogs.unshift({
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+        event: 'INVENTORY_STOCK_UPDATE',
+        actor: document.getElementById('user-display-name').innerText,
+        target: `${facId} / ${skuId.toUpperCase()}`,
+        details: `${delta >= 0 ? '+' : ''}${delta} units (${transType}) - ${notes}`,
+        status: 'COMMITTED'
+      });
+
+      closeInventoryModal();
+      renderAuditLogs();
+      updateFacilityMetrics();
+      showToast('Inventory Updated', `Stock adjusted for ${skuId.toUpperCase()} at ${facId}.`);
     }
 
     function updateFacilityMetrics() {
-      const isAlpha = appState.selectedFacility === 'FAC-HOSP-ALPHA';
-      document.getElementById('fac-detail-name').innerText = isAlpha ? 'Hospital Alpha (Acute Deficit)' : 'St. Jude Facility (Surplus Hub)';
-      document.getElementById('fac-detail-id').innerText = appState.selectedFacility;
-      
-      if (isAlpha) {
-        document.getElementById('stat-usable-stock').innerText = '320 vials';
-        document.getElementById('stat-adc').innerText = '105 vials/day';
-        document.getElementById('stat-dos').innerText = '3.04 Days';
-        document.getElementById('stat-risk').innerText = '0.882';
-      } else {
-        document.getElementById('stat-usable-stock').innerText = '1,450 vials';
-        document.getElementById('stat-adc').innerText = '48 vials/day';
-        document.getElementById('stat-dos').innerText = '30.2 Days';
-        document.getElementById('stat-risk').innerText = '0.145';
+      const fac = inventoryDB[appState.selectedFacility];
+      const sku = appState.selectedDrug;
+
+      if (!sku || !formularyRegistry[sku] || !fac || !fac.stock[sku]) {
+        document.getElementById('stat-usable-stock').innerText = `0 units`;
+        document.getElementById('stat-dos').innerText = `0 Days`;
+        document.getElementById('stat-risk').innerText = `0.000`;
+        renderBatchTable([]);
+        recalculateForecastCurve(0, 1);
+        return;
       }
-      updateFacilityCharts();
+
+      const medInfo = formularyRegistry[sku];
+      const record = fac.stock[sku];
+
+      document.getElementById('fac-detail-name').innerText = `${fac.name}`;
+      document.getElementById('fac-detail-id').innerText = appState.selectedFacility;
+      document.getElementById('stat-usable-stock').innerText = `${record.usableStock} units`;
+      document.getElementById('stat-reserved-quarantine').innerText = `Quarantined: ${record.quarantineStock} | Reserved: ${record.reservedStock}`;
+      document.getElementById('stat-adc').innerText = `${record.adc} units/day`;
+
+      // Formula 1: Days of Stock = Usable Stock / ADC
+      const dos = (record.usableStock / (record.adc || 1)).toFixed(1);
+      const statDosEl = document.getElementById('stat-dos');
+      statDosEl.innerText = `${dos} Days`;
+
+      // Formula 2: Risk R = w1*S + w2*D + w3*L + w4*G + w5*C
+      const S = Math.max(0, Math.min(1, (14 - dos) / 14)); // Low stock severity
+      const D = 0.35; // Spike factor
+      const L = Math.min(1, medInfo.leadTimeDays / 30); // Replenishment lead time
+      const G = 0.20; // Geographic isolation
+      const C = medInfo.criticality; // Clinical criticality
+      const riskScore = ((0.35 * S) + (0.2 * D) + (0.2 * L) + (0.1 * G) + (0.15 * C)).toFixed(3);
+
+      const riskEl = document.getElementById('stat-risk');
+      riskEl.innerText = riskScore;
+
+      // Status Badging
+      const badge = document.getElementById('fac-detail-badge');
+      if (dos <= 4) {
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono bg-rose-950 text-rose-400 border border-rose-800';
+        badge.innerText = 'CRITICAL DEFICIT';
+        statDosEl.className = 'text-2xl font-bold font-mono text-rose-400 mt-1';
+        riskEl.className = 'text-2xl font-bold font-mono text-rose-400 mt-1';
+        document.getElementById('stat-stockout-eta').innerText = `Stockout Expected in ~${Math.round(dos * 24)} hrs`;
+      } else if (dos <= 10) {
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono bg-amber-950 text-amber-400 border border-amber-800';
+        badge.innerText = 'AT RISK';
+        statDosEl.className = 'text-2xl font-bold font-mono text-amber-400 mt-1';
+        riskEl.className = 'text-2xl font-bold font-mono text-amber-400 mt-1';
+        document.getElementById('stat-stockout-eta').innerText = `Buffer low (Reorder triggered)`;
+      } else {
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-950 text-emerald-400 border border-emerald-800';
+        badge.innerText = 'STABLE SURPLUS';
+        statDosEl.className = 'text-2xl font-bold font-mono text-emerald-400 mt-1';
+        riskEl.className = 'text-2xl font-bold font-mono text-emerald-400 mt-1';
+        document.getElementById('stat-stockout-eta').innerText = `Safe coverage &gt; 10 days`;
+      }
+
+      // Sync Homepage node if Alpha
+      if (appState.selectedFacility === 'FAC-HOSP-ALPHA') {
+        document.getElementById('node-alpha-dos').innerText = `DoS: ${dos}d`;
+      }
+
+      renderBatchTable(record.batches);
+      recalculateForecastCurve(record.usableStock, record.adc);
     }
 
+    function renderBatchTable(batches) {
+      const tbody = document.getElementById('facility-batches-body');
+      if (!batches || batches.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-slate-500">No active batch records found for this medicine.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = batches.map(b => `
+        <tr class="hover:bg-slate-900/60">
+          <td class="p-2.5 font-bold text-white">${b.lot}</td>
+          <td class="p-2.5">${b.qty} units</td>
+          <td class="p-2.5 ${new Date(b.expiry) < new Date('2026-11-01') ? 'text-rose-400' : 'text-slate-300'}">${b.expiry}</td>
+          <td class="p-2.5"><span class="px-2 py-0.5 text-[9px] rounded bg-slate-800 text-slate-300 border border-slate-700">${b.status}</span></td>
+          <td class="p-2.5 text-cyan-400">${b.temp}</td>
+          <td class="p-2.5">
+            <button onclick="openInventoryModal()" class="text-xs text-cyan-400 hover:underline">Adjust</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Chart.js Dual-Path Engine (Moving Avg Baseline vs Shadow Bayesian ML)
+    function initForecastChart() {
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      forecastChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Path 1: Clinician Baseline (Moving Avg)',
+              data: [],
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              borderWidth: 2.5,
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Path 2: Shadow Bayesian Model (Gated ML)',
+              data: [],
+              borderColor: '#c084fc',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Safety Stock Level',
+              data: Array(15).fill(100),
+              borderColor: '#f43f5e',
+              borderWidth: 1.5,
+              borderDash: [2, 2],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            y: { grid: { color: 'rgba(51, 65, 85, 0.4)' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } },
+            x: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } }
+          },
+          plugins: {
+            legend: { position: 'top', labels: { color: '#cbd5e1', font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function recalculateForecastCurve(usableStock, adc) {
+      if (!forecastChartInstance) return;
+      const days = Array.from({ length: 15 }, (_, i) => `Day ${i + 1}`);
+      const baselineStock = [];
+      const shadowMlStock = [];
+      let cur = usableStock;
+      let shadow = usableStock;
+
+      for (let i = 0; i < 15; i++) {
+        baselineStock.push(Math.max(0, Math.round(cur)));
+        shadowMlStock.push(Math.max(0, Math.round(shadow)));
+        cur -= adc;
+        shadow -= (adc * 1.04);
+      }
+
+      forecastChartInstance.data.labels = days;
+      forecastChartInstance.data.datasets[0].data = baselineStock;
+      forecastChartInstance.data.datasets[1].data = shadowMlStock;
+      forecastChartInstance.update();
+    }
+
+    function changeActiveMedicine(sku) {
+      appState.selectedDrug = sku;
+      updateFacilityMetrics();
+    }
+
+    // =========================================================================
+    // WORKSPACE & INCIDENT RESOLUTION
+    // =========================================================================
     function loadRecommendation(incidentId) {
       switchTab('workspace');
-      if (incidentId === 'INC-2026-8821') {
-        renderSelectedPlan('acute');
-      } else {
-        renderSelectedPlan('chronic');
-      }
+      renderSelectedPlan(incidentId === 'INC-2026-8821' ? 'acute' : 'chronic');
     }
 
     function renderSelectedPlan(planType) {
@@ -737,96 +1485,18 @@
       lucide.createIcons();
     }
 
-    // Chart.js Dual-Path Engine (Moving Avg Baseline vs Shadow Bayesian ML)
-    function initForecastChart() {
-      const ctx = document.getElementById('forecastChart').getContext('2d');
-      const days = Array.from({length: 15}, (_, i) => `Day ${i + 1}`);
-
-      // Path 1 (Explainable Moving Average)
-      const baselineStock = [320, 215, 110, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      // Path 2 (Shadow Bayesian ML including weather spike & admission curves)
-      const shadowMlStock = [320, 205, 95, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      // Safety threshold
-      const safetyLine = Array(15).fill(100);
-
-      forecastChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: days,
-          datasets: [
-            {
-              label: 'Path 1: Transparent Clinician Baseline (Moving Avg)',
-              data: baselineStock,
-              borderColor: '#38bdf8',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              borderWidth: 2.5,
-              tension: 0.2,
-              fill: false
-            },
-            {
-              label: 'Path 2: Shadow Bayesian Model (Gated ML)',
-              data: shadowMlStock,
-              borderColor: '#c084fc',
-              borderWidth: 2,
-              borderDash: [5, 5],
-              tension: 0.2,
-              fill: false
-            },
-            {
-              label: 'Minimum Safety Stock Level',
-              data: safetyLine,
-              borderColor: '#f43f5e',
-              borderWidth: 1.5,
-              borderDash: [2, 2],
-              pointRadius: 0,
-              fill: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          scales: {
-            y: {
-              grid: { color: 'rgba(51, 65, 85, 0.4)' },
-              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } }
-            },
-            x: {
-              grid: { color: 'rgba(51, 65, 85, 0.2)' },
-              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } }
-            }
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: { color: '#cbd5e1', font: { size: 11 } }
-            }
-          }
-        }
-      });
-    }
-
-    function updateFacilityCharts() {
-      if (!forecastChartInstance) return;
-      forecastChartInstance.update();
-    }
-
-    // Workflow Actions & Audit Integration
     function approveTransfer(recId) {
-      const logEntry = {
+      appState.auditLogs.unshift({
         timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
         event: 'REDISTRIBUTION_DISPATCH_APPROVED',
-        actor: 'Dr. A. Vance (Regional Officer)',
-        details: 'Approved 350 vials Ceftriaxone St. Jude -> Hosp Alpha. Dispatch signal broadcasted via GS1 EDI.',
-        hash: 'b55e...190c',
+        actor: document.getElementById('user-display-name').innerText,
+        target: 'TRANSFER #REC-8821',
+        details: 'Approved 350 vials Ceftriaxone St. Jude -> Hospital Alpha. Route M-4 locked.',
         status: 'DISPATCHED'
-      };
-      appState.auditLogs.unshift(logEntry);
+      });
       renderAuditLogs();
-      showToast('Dispatch Authorized', 'Transfer dispatched. Courier cold chain route locked (ETA: 1h 15m).');
+      showToast('Dispatch Authorized', 'Transfer dispatched. Cold chain courier en route (ETA: 1h 15m).');
       
-      // Update UI state
       const btn = document.getElementById('btn-approve-transfer');
       btn.innerHTML = `<i data-lucide="check-check" class="w-4 h-4"></i><span>Dispatched</span>`;
       btn.classList.remove('from-cyan-500', 'to-blue-600');
@@ -836,17 +1506,16 @@
     }
 
     function approvePooledTender() {
-      const logEntry = {
+      appState.auditLogs.unshift({
         timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
         event: 'CHRONIC_TENDER_ESCALATED',
         actor: 'Hon. M. Thorne (Pooled Buyer)',
-        details: '140,000 tabs Methotrexate consolidated across 6 facilities. RFP sent to 3 generic manufacturers.',
-        hash: '9f23...a441',
+        target: 'TENDER #CH-3012',
+        details: '140,000 tabs Methotrexate aggregated across 6 facilities and transmitted.',
         status: 'ESCALATED'
-      };
-      appState.auditLogs.unshift(logEntry);
+      });
       renderAuditLogs();
-      showToast('Tender Consolidated', 'Demand aggregated across 6 facilities and transmitted to Central Store.');
+      showToast('Tender Consolidated', 'Aggregated demand signal sent to national procurement store.');
     }
 
     function renderAuditLogs() {
@@ -856,6 +1525,7 @@
           <td class="p-3 text-slate-400">${log.timestamp}</td>
           <td class="p-3 font-semibold text-cyan-400">${log.event}</td>
           <td class="p-3 text-slate-300">${log.actor}</td>
+          <td class="p-3 text-slate-300 font-bold">${log.target}</td>
           <td class="p-3 text-slate-400 max-w-xs truncate" title="${log.details}">${log.details}</td>
           <td class="p-3"><span class="px-2 py-0.5 text-[10px] rounded bg-emerald-950 text-emerald-400 border border-emerald-800">${log.status}</span></td>
         </tr>
@@ -873,11 +1543,7 @@
     }
 
     function exportAuditTrail() {
-      showToast('Audit Export Ready', 'Exporting cryptographically signed CSV audit packet...');
-    }
-
-    function openRejectModal() {
-      showToast('Intervention Modified', 'Opened parameters for human-in-the-loop manual adjustment.');
+      showToast('Audit Export Generated', 'Cryptographic CSV audit log downloaded.');
     }
   </script>
 </body>
