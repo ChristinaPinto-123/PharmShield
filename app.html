@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PharmShield Intelligence | Regional Medicine Resilience Engine</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains+Mono', monospace; }
+    .modal-backdrop { background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+
+  <!-- Top Global Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-40 backdrop-blur-md px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <i data-lucide="shield-alert" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold tracking-tight text-white text-lg">PharmShield</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono">ENTERPRISE CORE</span>
+        </div>
+        <p class="text-xs text-slate-400">GS1 / FHIR SupplyDelivery Compliant Shortage Mesh</p>
+      </div>
+    </div>
+
+    <!-- Active Incident & Data Privacy Ticker -->
+    <div class="hidden md:flex items-center space-x-6 text-xs font-mono">
+      <div class="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-md border border-slate-700">
+        <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-300">DP-Aggregator: <strong class="text-emerald-400">Active (Raw Stock Masked)</strong></span>
+      </div>
+      <div class="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-md border border-slate-700">
+        <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+        <span class="text-slate-300">Upstream Signals: <strong class="text-amber-400">2 Corroborated</strong></span>
+      </div>
+    </div>
+
+    <!-- User / Role Switcher -->
+    <div class="flex items-center space-x-3">
+      <div class="text-right hidden sm:block">
+        <div class="text-xs font-semibold text-slate-200" id="user-display-name">Dr. A. Vance</div>
+        <div class="text-[10px] text-cyan-400 uppercase font-mono" id="user-display-role">Regional Health Officer</div>
+      </div>
+      <div class="h-9 w-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold">
+        AV
+      </div>
+      <select id="role-selector" onchange="handleRoleSwitch(this.value)" class="text-xs bg-slate-800 border border-slate-700 text-slate-200 rounded px-2 py-1.5 focus:outline-none focus:border-cyan-500 font-mono">
+        <option value="regional_officer">Role: Regional Officer (Full)</option>
+        <option value="hospital_pharmacist">Role: Facility Pharmacist (Restricted Raw)</option>
+        <option value="national_director">Role: Pooled Buyer (Chronic Mode)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Workspace Sub-Nav -->
+  <nav class="border-b border-slate-800 bg-slate-900/40 px-6 py-2 flex space-x-1 sm:space-x-4 text-xs font-medium overflow-x-auto">
+    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-3 py-1.5 rounded-md text-cyan-400 bg-slate-800 flex items-center space-x-2">
+      <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+      <span>Regional Command</span>
+    </button>
+    <button onclick="switchTab('facility')" id="tab-facility" class="tab-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2">
+      <i data-lucide="hospital" class="w-4 h-4"></i>
+      <span>Facility Drill-Down</span>
+    </button>
+    <button onclick="switchTab('workspace')" id="tab-workspace" class="tab-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2 relative">
+      <i data-lucide="git-merge" class="w-4 h-4"></i>
+      <span>Intervention Workspace</span>
+      <span class="w-2 h-2 rounded-full bg-rose-500 absolute top-1 right-1"></span>
+    </button>
+    <button onclick="switchTab('audit')" id="tab-audit" class="tab-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center space-x-2">
+      <i data-lucide="shield-check" class="w-4 h-4"></i>
+      <span>Audit & Compliance Trail</span>
+    </button>
+  </nav>
+
+  <!-- Main Multi-View Content Container -->
+  <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: REGIONAL COMMAND DASHBOARD                                        -->
+    <!-- ========================================================================= -->
+    <div id="view-dashboard" class="space-y-6">
+      <!-- High Level Metric Ribbons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Facilities At Critical Risk</span>
+            <span class="p-1.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20"><i data-lucide="alert-triangle" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-2 text-2xl font-bold text-white font-mono">3 <span class="text-xs font-normal text-rose-400 font-sans">/ 14 in Cluster</span></div>
+          <div class="mt-2 flex items-center text-[11px] text-rose-400 font-mono">
+            <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +2 since last 48h (Spatial contagion)
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Corroborated Upstream Alerts</span>
+            <span class="p-1.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20"><i data-lucide="radio" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-2 text-2xl font-bold text-white font-mono">2 <span class="text-xs font-normal text-slate-400 font-sans">Events</span></div>
+          <div class="mt-2 flex items-center text-[11px] text-amber-300 font-mono">
+            <span>FDA/Distributor Delay Flagged</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Chronic Generic Market Scarcity</span>
+            <span class="p-1.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20"><i data-lucide="layers" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-2 text-2xl font-bold text-white font-mono">1 SKU</div>
+          <div class="mt-2 flex items-center text-[11px] text-purple-300 font-mono">
+            <span>Escalated to Pooled Tender</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Shortage Mitigation Success</span>
+            <span class="p-1.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i data-lucide="check-circle" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-2 text-2xl font-bold text-white font-mono">92.4%</div>
+          <div class="mt-2 flex items-center text-[11px] text-emerald-400 font-mono">
+            <span>11/12 Stockouts Averted (30d)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upstream Event Feed Bar (Architecture Addition 1) -->
+      <div class="bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-800/40 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 bg-amber-500/20 text-amber-300 rounded-lg shrink-0">
+            <i data-lucide="truck" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-slate-100 flex items-center gap-2">
+              <span>Upstream Disruption Signal (FHIR SupplyDelivery Ingestion)</span>
+              <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-900 text-amber-200 border border-amber-700">Port Customs Embargo</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Supplier <strong class="text-slate-200">PharmaSupply Hub North</strong>: Ceftriaxone & Amoxicillin shipments delayed 18 days. Confidence in facility-level shortage alerts upgraded from <strong class="text-amber-300">Moderate (54%)</strong> to <strong class="text-rose-400">High Corroborated (91%)</strong>.</p>
+          </div>
+        </div>
+        <button onclick="switchTab('workspace')" class="text-xs px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg shrink-0 flex items-center space-x-1.5 transition">
+          <span>Review Rebalancing Actions</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Main Grid: Regional Network Mesh & Correlated Cluster Analysis -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Cluster Map / Node Topology Representation -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                <span>Metropolitan Regional Health Mesh (Topology)</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 bg-slate-800 text-slate-300 rounded">Sector 4</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Differential privacy active: Peer hospitals see aggregated shortage vectors, never competitor raw balances.</p>
+            </div>
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block mr-1"></span> Surplus</span>
+              <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block mr-1"></span> At Risk</span>
+              <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block mr-1"></span> Critical Stockout</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Node Topology Canvas -->
+          <div class="flex-1 min-h-[300px] bg-slate-950/60 border border-slate-800/80 rounded-lg relative p-4 overflow-hidden flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full" id="topology-svg">
+              <!-- Route Lines -->
+              <line x1="20%" y1="35%" x2="50%" y2="50%" stroke="#334155" stroke-width="2" stroke-dasharray="4" />
+              <line x1="80%" y1="30%" x2="50%" y2="50%" stroke="#f43f5e" stroke-width="2" />
+              <line x1="30%" y1="80%" x2="50%" y2="50%" stroke="#10b981" stroke-width="2" />
+              <line x1="75%" y1="75%" x2="50%" y2="50%" stroke="#334155" stroke-width="2" />
+            </svg>
+
+            <!-- Node 1: Regional Hub / Warehouse -->
+            <div class="absolute top-[42%] left-[45%] text-center transform -translate-x-1/2 -translate-y-1/2">
+              <div class="w-14 h-14 rounded-2xl bg-cyan-950 border-2 border-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-500/20 cursor-pointer hover:scale-105 transition" onclick="selectFacility('FAC-REG-01')">
+                <i data-lucide="building-2" class="w-7 h-7 text-cyan-300"></i>
+              </div>
+              <div class="text-[11px] font-bold mt-1 text-slate-200">Central Depot 01</div>
+              <div class="text-[9px] font-mono text-cyan-400">Hub / Buffer Safety</div>
+            </div>
+
+            <!-- Node 2: Hospital Alpha (Critical Shortage) -->
+            <div class="absolute top-[18%] right-[15%] text-center cursor-pointer group" onclick="selectFacility('FAC-HOSP-ALPHA')">
+              <div class="w-11 h-11 rounded-xl bg-rose-950 border-2 border-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20 group-hover:scale-110 transition animate-bounce">
+                <i data-lucide="cross" class="w-5 h-5 text-rose-400"></i>
+              </div>
+              <div class="text-[11px] font-bold mt-1 text-rose-300">Hospital Alpha</div>
+              <div class="text-[9px] font-mono text-rose-400">Risk Score: 0.88 (3.2 DoS)</div>
+            </div>
+
+            <!-- Node 3: Hospital Gamma (Donor Surplus) -->
+            <div class="absolute bottom-[15%] left-[22%] text-center cursor-pointer group" onclick="selectFacility('FAC-HOSP-GAMMA')">
+              <div class="w-11 h-11 rounded-xl bg-emerald-950 border-2 border-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition">
+                <i data-lucide="cross" class="w-5 h-5 text-emerald-400"></i>
+              </div>
+              <div class="text-[11px] font-bold mt-1 text-emerald-300">St. Jude Facility</div>
+              <div class="text-[9px] font-mono text-emerald-400">Surplus (34 DoS, FEFO Safe)</div>
+            </div>
+
+            <!-- Node 4: Clinic Beta (Moderate) -->
+            <div class="absolute top-[22%] left-[12%] text-center cursor-pointer group" onclick="selectFacility('FAC-CLIN-BETA')">
+              <div class="w-10 h-10 rounded-xl bg-amber-950 border-2 border-amber-500 flex items-center justify-center group-hover:scale-110 transition">
+                <i data-lucide="activity" class="w-5 h-5 text-amber-400"></i>
+              </div>
+              <div class="text-[11px] font-bold mt-1 text-amber-300">West Clinic</div>
+              <div class="text-[9px] font-mono text-amber-400">Risk Score: 0.61</div>
+            </div>
+
+            <!-- Node 5: Memorial (Stable) -->
+            <div class="absolute bottom-[18%] right-[18%] text-center cursor-pointer group" onclick="selectFacility('FAC-HOSP-MEM')">
+              <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center group-hover:scale-110 transition">
+                <i data-lucide="hospital" class="w-5 h-5 text-slate-400"></i>
+              </div>
+              <div class="text-[11px] font-bold mt-1 text-slate-300">City Memorial</div>
+              <div class="text-[9px] font-mono text-slate-400">Risk: 0.22 (Stable)</div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex justify-between items-center text-xs text-slate-400">
+            <span>Transfers consider cold-chain constraints (2°C - 8°C verified routes).</span>
+            <span class="font-mono text-cyan-400">Click any facility node for drill-down</span>
+          </div>
+        </div>
+
+        <!-- Correlated Shortage Alerts & Chronic vs. Acute Classifier -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-white flex items-center justify-between">
+              <span>Active Regional Incidents</span>
+              <span class="text-[10px] font-mono bg-rose-950 text-rose-300 border border-rose-800 px-2 py-0.5 rounded">2 Pending Action</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Classified into Acute (Redistributable) vs Chronic (Pooled Procurement).</p>
+          </div>
+
+          <!-- Incidents List -->
+          <div class="space-y-3 flex-1 overflow-y-auto max-h-[340px] pr-1">
+            <!-- Acute Incident Card -->
+            <div class="p-3.5 bg-slate-950 rounded-lg border border-rose-900/60 hover:border-rose-600 transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-rose-400">INC-2026-8821</span>
+                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-blue-900/60 text-cyan-300 border border-cyan-800">Acute Cluster Shortage</span>
+              </div>
+              <div class="text-sm font-bold text-white mt-1">Ceftriaxone 1g Injectable</div>
+              <p class="text-xs text-slate-400 mt-0.5">3 facilities facing critical breach within 72h. Donor facility with safe non-depleting surplus identified.</p>
+              <div class="mt-3 flex items-center justify-between text-xs">
+                <span class="text-rose-400 font-mono">Risk: 0.88 (High)</span>
+                <button onclick="loadRecommendation('INC-2026-8821')" class="text-cyan-400 hover:text-cyan-300 font-semibold underline text-xs">Resolve via Transfer &rarr;</button>
+              </div>
+            </div>
+
+            <!-- Chronic Generic Market Shortage Card (Architecture Addition 4) -->
+            <div class="p-3.5 bg-slate-950 rounded-lg border border-purple-900/60 hover:border-purple-600 transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-purple-400">INC-2026-3012</span>
+                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">Chronic Generic Failure</span>
+              </div>
+              <div class="text-sm font-bold text-white mt-1">Methotrexate 2.5mg Tabs</div>
+              <p class="text-xs text-slate-400 mt-0.5">Zero regional surplus anywhere in mesh. Margin erosion led to 2 manufacturer halts. Sustained deficit &gt; 4 weeks.</p>
+              <div class="mt-3 flex items-center justify-between text-xs">
+                <span class="text-purple-400 font-mono">No Donors Exist</span>
+                <button onclick="loadRecommendation('INC-2026-3012')" class="text-purple-300 hover:text-purple-200 font-semibold underline text-xs">Escalate to Pooled Tender &rarr;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-400">
+            <i data-lucide="info" class="w-3.5 h-3.5 inline text-cyan-400 mr-1"></i>
+            Dual-Path Engine compares Moving-Avg baseline with Shadow Bayesian model.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: FACILITY DRILL-DOWN & DUAL-PATH FORECAST                          -->
+    <!-- ========================================================================= -->
+    <div id="view-facility" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-5 rounded-xl border border-slate-800">
+        <div>
+          <div class="flex items-center space-x-3">
+            <h2 class="text-lg font-bold text-white" id="fac-detail-name">Hospital Alpha (Acute Facility)</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-rose-950 text-rose-400 border border-rose-800">CRITICAL DEFICIT</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Facility ID: <span class="font-mono text-slate-300" id="fac-detail-id">FAC-HOSP-ALPHA</span> | GS1 GLN: <span class="font-mono">0844512000018</span> | Type: Tertiary Referral Centre</p>
+        </div>
+
+        <!-- Medicine SKU Filter -->
+        <div class="flex items-center space-x-2">
+          <label class="text-xs text-slate-400">Selected Medicine:</label>
+          <select id="facility-drug-select" onchange="updateFacilityCharts()" class="bg-slate-800 text-slate-100 text-xs rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:border-cyan-500 font-mono">
+            <option value="ceftriaxone">Ceftriaxone 1g Inj (Critical)</option>
+            <option value="amoxicillin">Amoxicillin 500mg (At Risk)</option>
+            <option value="methotrexate">Methotrexate 2.5mg (Chronic Failure)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Facility Operational Metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs text-slate-400">Usable Stock on Hand</div>
+          <div class="text-2xl font-bold font-mono text-white mt-1" id="stat-usable-stock">320 vials</div>
+          <div class="text-[11px] text-slate-400 mt-1">Quarantined: 0 | Reserved: 40</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs text-slate-400">Average Daily Consumption (ADC)</div>
+          <div class="text-2xl font-bold font-mono text-white mt-1" id="stat-adc">105 vials/day</div>
+          <div class="text-[11px] text-rose-400 mt-1 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +28% spike detected</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs text-slate-400">Days of Stock (DoS)</div>
+          <div class="text-2xl font-bold font-mono text-rose-400 mt-1" id="stat-dos">3.04 Days</div>
+          <div class="text-[11px] text-rose-400 mt-1 font-semibold">Stockout Expected in 73 hrs</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs text-slate-400">Calculated Risk Index ($R$)</div>
+          <div class="text-2xl font-bold font-mono text-rose-400 mt-1" id="stat-risk">0.882</div>
+          <div class="text-[11px] text-slate-400 mt-1">$w_1S + w_2D + w_3L + w_4G + w_5C$</div>
+        </div>
+      </div>
+
+      <!-- Dual-Path Forecast & Shadow ML Model (Architecture Addition 2) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+          <div>
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <span>Dual-Path Demand & Stock Projection Engine (30-Day Window)</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-800 rounded">Gated Shadow Validation</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Path 1: Transparent Clinician-Auditable Moving Average Baseline. Path 2: Bayesian Epidemiological Model (Weather & Admissions).
+            </p>
+          </div>
+          <!-- Model Divergence Metric -->
+          <div class="flex items-center space-x-2 text-xs font-mono bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+            <span class="text-slate-400">Model Divergence:</span>
+            <span class="text-emerald-400 font-bold">4.2% (Within 10% Gate &rarr; Safe)</span>
+          </div>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="mt-4 h-72 w-full">
+          <canvas id="forecastChart"></canvas>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-slate-950 p-3.5 rounded-lg border border-slate-800">
+          <div>
+            <span class="font-semibold text-slate-300">Stockout Probability (14-day):</span>
+            <span class="text-rose-400 font-mono font-bold block text-sm">84.2%</span>
+          </div>
+          <div>
+            <span class="font-semibold text-slate-300">Upstream Corroborated Penalty:</span>
+            <span class="text-amber-400 font-mono font-bold block text-sm">+35% (Vendor PO Delayed 18d)</span>
+          </div>
+          <div>
+            <span class="font-semibold text-slate-300">Batch Expiry Warning (FEFO):</span>
+            <span class="text-slate-300 font-mono font-bold block text-sm">Batch #CT-901 (40 vials) expires in 12d</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 3: RECOMMENDATION & OPTIMIZATION WORKSPACE                          -->
+    <!-- ========================================================================= -->
+    <div id="view-workspace" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Intervention Planning & Resolution Engine</h2>
+          <p class="text-xs text-slate-400">Review multi-criteria optimization transfers, verify cold chain routes, or authorize pooled market orders.</p>
+        </div>
+        <div class="flex space-x-2 text-xs font-mono">
+          <button onclick="renderSelectedPlan('acute')" id="btn-mode-acute" class="px-3 py-1.5 rounded-md bg-cyan-600 text-white font-semibold">Incident 1: Acute Ceftriaxone</button>
+          <button onclick="renderSelectedPlan('chronic')" id="btn-mode-chronic" class="px-3 py-1.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700">Incident 2: Chronic Methotrexate</button>
+        </div>
+      </div>
+
+      <!-- Acute Transfer Plan Card -->
+      <div id="plan-acute" class="space-y-6">
+        <div class="bg-slate-900 border border-cyan-800/60 rounded-xl p-6 shadow-xl">
+          <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-4">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono">RECOMMENDATION #REC-8821</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">HIGH CONFIDENCE</span>
+              </div>
+              <h3 class="text-base font-bold text-white mt-1">Inter-Facility Redistribution: St. Jude Facility &rarr; Hospital Alpha</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Automated FEFO-constrained solver recommendation. Preserves safety stock at donor facility.</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-400 block">Net Risk Reduction</span>
+              <span class="text-xl font-mono font-bold text-emerald-400">-76.8% Stockout Probability</span>
+            </div>
+          </div>
+
+          <!-- Flow Comparison Table -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-6">
+            <!-- Donor -->
+            <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
+              <span class="text-xs font-mono text-emerald-400 font-semibold uppercase">Donor Facility</span>
+              <div class="text-sm font-bold text-white mt-1">St. Jude Facility</div>
+              <div class="mt-3 space-y-1.5 text-xs text-slate-300 font-mono">
+                <div>Current Stock: <strong class="text-white">1,450 vials</strong></div>
+                <div>Transfer Qty: <strong class="text-rose-400">-350 vials</strong></div>
+                <div>Post-Transfer Stock: <strong class="text-white">1,100 vials</strong></div>
+                <div class="text-emerald-400 pt-1 font-sans">Retains 22.8 Days of Stock (Safe threshold: 14 DoS)</div>
+              </div>
+            </div>
+
+            <!-- Route / Logistics -->
+            <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-mono text-cyan-400 font-semibold uppercase">Logistics & Cold-Chain</span>
+                <div class="text-sm font-bold text-white mt-1">Refrigerated Van (2°C - 8°C)</div>
+                <div class="mt-3 space-y-1.5 text-xs text-slate-300">
+                  <div>Distance: <span class="font-mono text-white">42 km via Route M-4</span></div>
+                  <div>Estimated Transit Time: <span class="font-mono text-white">1h 15m</span></div>
+                  <div>Batch Assigned: <span class="font-mono text-amber-300">#CT-804 (Exp: 6 mos)</span></div>
+                </div>
+              </div>
+              <div class="mt-2 text-[11px] text-emerald-400 flex items-center font-mono">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1"></i> FEFO Priority Verified
+              </div>
+            </div>
+
+            <!-- Recipient -->
+            <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
+              <span class="text-xs font-mono text-rose-400 font-semibold uppercase">Recipient Facility</span>
+              <div class="text-sm font-bold text-white mt-1">Hospital Alpha</div>
+              <div class="mt-3 space-y-1.5 text-xs text-slate-300 font-mono">
+                <div>Current Stock: <strong class="text-rose-400">320 vials (3.04 DoS)</strong></div>
+                <div>Received Qty: <strong class="text-emerald-400">+350 vials</strong></div>
+                <div>Post-Transfer Stock: <strong class="text-white">670 vials</strong></div>
+                <div class="text-emerald-400 pt-1 font-sans">Extends DoS to 8.5 Days (Until Vendor Re-supply)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Human-In-The-Loop Approval Action Controls -->
+          <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="text-xs text-slate-400 flex items-center space-x-2">
+              <i data-lucide="lock" class="w-4 h-4 text-cyan-400"></i>
+              <span>Requires dual authorization under Section 4 Health Resilience Protocols.</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button onclick="openRejectModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                Reject / Modify
+              </button>
+              <button onclick="approveTransfer('REC-8821')" id="btn-approve-transfer" class="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold shadow-lg shadow-cyan-500/20 flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Approve & Dispatch Transfer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chronic Generic Pooled Tender Plan Card (Architecture Addition 4) -->
+      <div id="plan-chronic" class="hidden space-y-6">
+        <div class="bg-slate-900 border border-purple-800/60 rounded-xl p-6 shadow-xl">
+          <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-4">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-mono">CHRONIC ESCALATION #CH-3012</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800 font-mono">MARKET DEFICIT (NON-REDISTRIBUTABLE)</span>
+              </div>
+              <h3 class="text-base font-bold text-white mt-1">Multi-Facility Demand Pooling & Bulk Tender Escalation</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Zero donor facilities have usable surplus. Escalating aggregated demand to National Central Medical Store / Donor Pooled Facility.</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-400 block">Consolidated Demand</span>
+              <span class="text-xl font-mono font-bold text-purple-400">140,000 tablets (6 Facilities)</span>
+            </div>
+          </div>
+
+          <!-- Aggregated Buyer Table -->
+          <div class="my-6 overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950 text-slate-400 font-mono uppercase text-[10px]">
+                <tr>
+                  <th class="p-3">Facility</th>
+                  <th class="p-3">Reported Stock</th>
+                  <th class="p-3">Runout Date</th>
+                  <th class="p-3">30-Day Pooled Demand</th>
+                  <th class="p-3">Proposed Contract Type</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 bg-slate-950/40 font-mono">
+                <tr>
+                  <td class="p-3 font-semibold text-white">Hospital Alpha</td>
+                  <td class="p-3 text-rose-400">120 tabs</td>
+                  <td class="p-3 text-rose-400">Tomorrow</td>
+                  <td class="p-3">30,000 tabs</td>
+                  <td class="p-3 text-slate-400">Guaranteed Off-take</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">St. Jude Facility</td>
+                  <td class="p-3 text-rose-400">400 tabs</td>
+                  <td class="p-3 text-amber-400">3 Days</td>
+                  <td class="p-3">45,000 tabs</td>
+                  <td class="p-3 text-slate-400">Guaranteed Off-take</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">City Memorial</td>
+                  <td class="p-3 text-rose-400">210 tabs</td>
+                  <td class="p-3 text-rose-400">2 Days</td>
+                  <td class="p-3">65,000 tabs</td>
+                  <td class="p-3 text-slate-400">Guaranteed Off-take</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Value Prop Action -->
+          <div class="bg-purple-950/30 border border-purple-800/40 p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="text-xs text-slate-300">
+              <strong class="text-purple-300 block mb-1">Data-as-a-Service Monetization & Procurement Leverage:</strong>
+              Transmits verified regional shortage telemetry to national buyers to secure priority allocation and negotiate bulk floor prices with API manufacturers.
+            </div>
+            <button onclick="approvePooledTender()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shrink-0 shadow-lg shadow-purple-600/20">
+              Authorize Consolidated Pooled Tender
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 4: AUDIT & COMPLIANCE TRAIL                                         -->
+    <!-- ========================================================================= -->
+    <div id="view-audit" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Cryptographic Immutable Audit Log</span>
+              <span class="text-xs font-mono bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">SHA-256 Verifiable</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Captures every calculation, model divergence check, human override, and inter-facility dispatch.</p>
+          </div>
+          <button onclick="exportAuditTrail()" class="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 flex items-center space-x-1 font-mono">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="p-3">Timestamp</th>
+                <th class="p-3">Action Event</th>
+                <th class="p-3">Actor</th>
+                <th class="p-3">Details / Hash</th>
+                <th class="p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300" id="audit-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toast" class="fixed bottom-6 right-6 max-w-md bg-slate-900 border border-cyan-500/50 p-4 rounded-xl shadow-2xl z-50 transform translate-y-24 opacity-0 transition duration-300 flex items-start space-x-3">
+    <div id="toast-icon" class="p-1 rounded bg-cyan-500/20 text-cyan-400 shrink-0">
+      <i data-lucide="check" class="w-4 h-4"></i>
+    </div>
+    <div>
+      <div id="toast-title" class="text-xs font-bold text-white">Action Executed</div>
+      <div id="toast-desc" class="text-xs text-slate-400 mt-0.5">Transfer logged and confirmed.</div>
+    </div>
+  </div>
+
+  <!-- Script Logic -->
+  <script>
+    // State Stores
+    const appState = {
+      role: 'regional_officer',
+      selectedFacility: 'FAC-HOSP-ALPHA',
+      selectedDrug: 'ceftriaxone',
+      auditLogs: [
+        {
+          timestamp: '2026-09-15 22:15:02 UTC',
+          event: 'UPSTREAM_CORROBORATION_INGESTED',
+          actor: 'FHIR_GATEWAY_DAEMON',
+          details: 'Ingested Customs Delay on Amoxicillin/Ceftriaxone from North Port Depot',
+          hash: 'e9b2...8f3c',
+          status: 'PROCESSED'
+        },
+        {
+          timestamp: '2026-09-15 22:30:19 UTC',
+          event: 'DUAL_MODEL_COMPARISON',
+          actor: 'ENGINE_SHADOW_RUNNER',
+          details: 'Baseline DoS: 3.04d vs Bayesian DoS: 2.91d (Divergence: 4.2% within safety threshold)',
+          hash: '7a11...32d1',
+          status: 'VERIFIED'
+        },
+        {
+          timestamp: '2026-09-15 23:01:45 UTC',
+          event: 'DIFF_PRIVACY_AGGREGATION',
+          actor: 'DP_AGGREGATOR',
+          details: 'Published regional scarcity vector (Epsilon=0.5). Raw stock obscured.',
+          hash: '4c0a...99e2',
+          status: 'ENCRYPTED'
+        }
+      ]
+    };
+
+    let forecastChartInstance = null;
+
+    // Initialize UI
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderAuditLogs();
+      initForecastChart();
+    });
+
+    // View Navigation
+    function switchTab(viewName) {
+      const views = ['dashboard', 'facility', 'workspace', 'audit'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const btn = document.getElementById(`tab-${v}`);
+        if (v === viewName) {
+          el.classList.remove('hidden');
+          btn.classList.add('text-cyan-400', 'bg-slate-800');
+          btn.classList.remove('text-slate-400');
+        } else {
+          el.classList.add('hidden');
+          btn.classList.remove('text-cyan-400', 'bg-slate-800');
+          btn.classList.add('text-slate-400');
+        }
+      });
+      lucide.createIcons();
+      if (viewName === 'facility' && forecastChartInstance) {
+        setTimeout(() => forecastChartInstance.resize(), 100);
+      }
+    }
+
+    // Role Switching (Demonstrating DP and Role Protections)
+    function handleRoleSwitch(role) {
+      appState.role = role;
+      const userName = document.getElementById('user-display-name');
+      const userRole = document.getElementById('user-display-role');
+
+      if (role === 'hospital_pharmacist') {
+        userName.innerText = 'Pharm. Sarah Jenkins';
+        userRole.innerText = 'Hospital Alpha Pharmacist';
+        showToast('Privacy Mode Active', 'Peer hospital raw balances hidden per Differential Privacy boundary.');
+      } else if (role === 'national_director') {
+        userName.innerText = 'Hon. M. Thorne';
+        userRole.innerText = 'Director Pooled Procurement';
+        showToast('Procurement Mode Active', 'Consolidated generic scarcity reports enabled.');
+      } else {
+        userName.innerText = 'Dr. A. Vance';
+        userRole.innerText = 'Regional Health Officer';
+        showToast('Full Mesh Access', 'Regional balancing view enabled.');
+      }
+    }
+
+    function selectFacility(facilityId) {
+      appState.selectedFacility = facilityId;
+      switchTab('facility');
+      updateFacilityMetrics();
+    }
+
+    function updateFacilityMetrics() {
+      const isAlpha = appState.selectedFacility === 'FAC-HOSP-ALPHA';
+      document.getElementById('fac-detail-name').innerText = isAlpha ? 'Hospital Alpha (Acute Deficit)' : 'St. Jude Facility (Surplus Hub)';
+      document.getElementById('fac-detail-id').innerText = appState.selectedFacility;
+      
+      if (isAlpha) {
+        document.getElementById('stat-usable-stock').innerText = '320 vials';
+        document.getElementById('stat-adc').innerText = '105 vials/day';
+        document.getElementById('stat-dos').innerText = '3.04 Days';
+        document.getElementById('stat-risk').innerText = '0.882';
+      } else {
+        document.getElementById('stat-usable-stock').innerText = '1,450 vials';
+        document.getElementById('stat-adc').innerText = '48 vials/day';
+        document.getElementById('stat-dos').innerText = '30.2 Days';
+        document.getElementById('stat-risk').innerText = '0.145';
+      }
+      updateFacilityCharts();
+    }
+
+    function loadRecommendation(incidentId) {
+      switchTab('workspace');
+      if (incidentId === 'INC-2026-8821') {
+        renderSelectedPlan('acute');
+      } else {
+        renderSelectedPlan('chronic');
+      }
+    }
+
+    function renderSelectedPlan(planType) {
+      const planAcute = document.getElementById('plan-acute');
+      const planChronic = document.getElementById('plan-chronic');
+      const btnAcute = document.getElementById('btn-mode-acute');
+      const btnChronic = document.getElementById('btn-mode-chronic');
+
+      if (planType === 'acute') {
+        planAcute.classList.remove('hidden');
+        planChronic.classList.add('hidden');
+        btnAcute.classList.add('bg-cyan-600', 'text-white');
+        btnAcute.classList.remove('bg-slate-800', 'text-slate-300');
+        btnChronic.classList.remove('bg-purple-600', 'text-white');
+        btnChronic.classList.add('bg-slate-800', 'text-slate-300');
+      } else {
+        planAcute.classList.add('hidden');
+        planChronic.classList.remove('hidden');
+        btnChronic.classList.add('bg-purple-600', 'text-white');
+        btnChronic.classList.remove('bg-slate-800', 'text-slate-300');
+        btnAcute.classList.remove('bg-cyan-600', 'text-white');
+        btnAcute.classList.add('bg-slate-800', 'text-slate-300');
+      }
+      lucide.createIcons();
+    }
+
+    // Chart.js Dual-Path Engine (Moving Avg Baseline vs Shadow Bayesian ML)
+    function initForecastChart() {
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      const days = Array.from({length: 15}, (_, i) => `Day ${i + 1}`);
+
+      // Path 1 (Explainable Moving Average)
+      const baselineStock = [320, 215, 110, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      // Path 2 (Shadow Bayesian ML including weather spike & admission curves)
+      const shadowMlStock = [320, 205, 95, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      // Safety threshold
+      const safetyLine = Array(15).fill(100);
+
+      forecastChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [
+            {
+              label: 'Path 1: Transparent Clinician Baseline (Moving Avg)',
+              data: baselineStock,
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              borderWidth: 2.5,
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Path 2: Shadow Bayesian Model (Gated ML)',
+              data: shadowMlStock,
+              borderColor: '#c084fc',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Minimum Safety Stock Level',
+              data: safetyLine,
+              borderColor: '#f43f5e',
+              borderWidth: 1.5,
+              borderDash: [2, 2],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            y: {
+              grid: { color: 'rgba(51, 65, 85, 0.4)' },
+              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            x: {
+              grid: { color: 'rgba(51, 65, 85, 0.2)' },
+              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#cbd5e1', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateFacilityCharts() {
+      if (!forecastChartInstance) return;
+      forecastChartInstance.update();
+    }
+
+    // Workflow Actions & Audit Integration
+    function approveTransfer(recId) {
+      const logEntry = {
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+        event: 'REDISTRIBUTION_DISPATCH_APPROVED',
+        actor: 'Dr. A. Vance (Regional Officer)',
+        details: 'Approved 350 vials Ceftriaxone St. Jude -> Hosp Alpha. Dispatch signal broadcasted via GS1 EDI.',
+        hash: 'b55e...190c',
+        status: 'DISPATCHED'
+      };
+      appState.auditLogs.unshift(logEntry);
+      renderAuditLogs();
+      showToast('Dispatch Authorized', 'Transfer dispatched. Courier cold chain route locked (ETA: 1h 15m).');
+      
+      // Update UI state
+      const btn = document.getElementById('btn-approve-transfer');
+      btn.innerHTML = `<i data-lucide="check-check" class="w-4 h-4"></i><span>Dispatched</span>`;
+      btn.classList.remove('from-cyan-500', 'to-blue-600');
+      btn.classList.add('bg-emerald-700', 'cursor-not-allowed');
+      btn.disabled = true;
+      lucide.createIcons();
+    }
+
+    function approvePooledTender() {
+      const logEntry = {
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+        event: 'CHRONIC_TENDER_ESCALATED',
+        actor: 'Hon. M. Thorne (Pooled Buyer)',
+        details: '140,000 tabs Methotrexate consolidated across 6 facilities. RFP sent to 3 generic manufacturers.',
+        hash: '9f23...a441',
+        status: 'ESCALATED'
+      };
+      appState.auditLogs.unshift(logEntry);
+      renderAuditLogs();
+      showToast('Tender Consolidated', 'Demand aggregated across 6 facilities and transmitted to Central Store.');
+    }
+
+    function renderAuditLogs() {
+      const tbody = document.getElementById('audit-table-body');
+      tbody.innerHTML = appState.auditLogs.map(log => `
+        <tr class="hover:bg-slate-900/60 transition">
+          <td class="p-3 text-slate-400">${log.timestamp}</td>
+          <td class="p-3 font-semibold text-cyan-400">${log.event}</td>
+          <td class="p-3 text-slate-300">${log.actor}</td>
+          <td class="p-3 text-slate-400 max-w-xs truncate" title="${log.details}">${log.details}</td>
+          <td class="p-3"><span class="px-2 py-0.5 text-[10px] rounded bg-emerald-950 text-emerald-400 border border-emerald-800">${log.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function showToast(title, desc) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-title').innerText = title;
+      document.getElementById('toast-desc').innerText = desc;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 4000);
+    }
+
+    function exportAuditTrail() {
+      showToast('Audit Export Ready', 'Exporting cryptographically signed CSV audit packet...');
+    }
+
+    function openRejectModal() {
+      showToast('Intervention Modified', 'Opened parameters for human-in-the-loop manual adjustment.');
+    }
+  </script>
+</body>
+</html>
