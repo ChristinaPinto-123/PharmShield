@@ -1,10 +1,12 @@
 **PharmShield: Regional Medicine Supply Chain Management Engine**
----
+
 *What is it?*
 
 A client-side dashboard engineered for real-time pharmaceutical shortage tracking, multi-facility stock redistribution, and clinical formulary resilience. 
 Built to comply with GS1 tracking standards, WHO Essential Medicines List (EML) protocols, and FHIR SupplyDelivery resource models.
+
 ---
+
 *Core Capabilities*
 
 - Regional Command Mesh: Visualizes network topology across multiple nodes using differential-privacy aggregation to conceal confidential and raw hospital data from 
